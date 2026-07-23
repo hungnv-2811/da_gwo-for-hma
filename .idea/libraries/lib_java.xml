@@ -1,0 +1,26 @@
+<component name="libraryTable">
+  <library name="lib java">
+    <CLASSES>
+      <root url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/common_math/commons-math3-3.6.1" />
+      <root url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/commons-io-2.11.0" />
+      <root url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/poi-bin-5.1.0/lib" />
+      <root url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/poi-bin-5.1.0" />
+      <root url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/poi-bin-5.1.0/ooxml-lib" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/common_math/commons-math3-3.6.1/docs/apidocs" />
+      <root url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/commons-io-2.11.0/docs" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/common_math/commons-math3-3.6.1" />
+      <root url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/commons-io-2.11.0" />
+    </SOURCES>
+    <jarDirectory url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/common_math/commons-math3-3.6.1" recursive="false" />
+    <jarDirectory url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/commons-io-2.11.0" recursive="false" />
+    <jarDirectory url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/poi-bin-5.1.0" recursive="false" />
+    <jarDirectory url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/poi-bin-5.1.0/lib" recursive="false" />
+    <jarDirectory url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/poi-bin-5.1.0/ooxml-lib" recursive="false" />
+    <jarDirectory url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/common_math/commons-math3-3.6.1" recursive="false" type="SOURCES" />
+    <jarDirectory url="file://$USER_HOME$/Desktop/optimize/GWO/lib java/commons-io-2.11.0" recursive="false" type="SOURCES" />
+  </library>
+</component>
