@@ -3,33 +3,52 @@ package com.hma.utils;
 import com.hma.config.HMAConfig;
 import com.hma.cost.CostCalculator;
 import com.hma.model.HMASolution;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SolutionPrinter {
     public static void printSolution(HMASolution sol, HMAConfig cfg) {
         CostCalculator calc = new CostCalculator(cfg);
         calc.calcTotalCost(sol);
         
-        System.out.println("===============================================================");
-        System.out.println("             HMA TRANSPORTATION OPTIMIZATION PLAN              ");
-        System.out.println("===============================================================");
-        System.out.printf("Total Cost (TC):        %,.0f VND\n", sol.TC);
-        System.out.printf("  - Fixed Cost:         %,.0f VND (Mobilized vehicles: %d)\n", sol.Cfixed, countMobilized(sol));
-        System.out.printf("  - Operational Cost:   %,.0f VND\n", sol.Coperational);
-        System.out.printf("  - Temperature Penalty:%,.0f VND\n", sol.Cpenalty);
-        System.out.println("---------------------------------------------------------------");
+        int mobilizedCount = countMobilized(sol);
+        int totalTrips = 0;
+        int tempViolations = 0;
+        
+        System.out.println("═══════════════════════════════════════════════════════════════");
+        System.out.println("  PHƯƠNG ÁN VẬN CHUYỂN HMA TỐI ƯU — DA_GWO");
+        System.out.printf("  TC = %,.0f VNĐ\n", sol.TC);
+        System.out.printf("  ├── C_fixed       = %,.0f VNĐ  (%d xe × %,.0f)\n", sol.Cfixed, mobilizedCount, cfg.f);
+        System.out.printf("  ├── C_operational = %,.0f VNĐ\n", sol.Coperational);
+        System.out.printf("  └── C_penalty     = %,.0f VNĐ          (%s)\n", 
+                          sol.Cpenalty, sol.Cpenalty == 0 ? "không chuyến nào T<120°C ✓" : "vi phạm nhiệt ✗");
+        System.out.println("═══════════════════════════════════════════════════════════════\n");
+        
+        List<Integer> unmobilizedVehicles = new ArrayList<>();
         
         for (int k = 0; k < cfg.T; k++) {
             if (sol.zk[k] == 0) {
-                System.out.printf("Vehicle %d: NOT MOBILIZED\n", k + 1);
+                unmobilizedVehicles.add(k + 1);
                 continue;
             }
             
-            System.out.printf("Vehicle %d (Mobilized):\n", k + 1);
-            System.out.printf("  %-10s | %-12s | %-12s | %-12s | %-15s\n", 
-                              "Trip #", "Site", "Depart (Min)", "Arrival T", "Trip Cost");
-            System.out.println("  -------------------------------------------------------------");
-            
+            // Count active trips for vehicle k
             int activeTripCount = 0;
+            for (int m = 0; m < cfg.Mk; m++) {
+                for (int i = 0; i < cfg.N; i++) {
+                    if (sol.xikm[i][k][m] == 1) {
+                        activeTripCount++;
+                    }
+                }
+            }
+            totalTrips += activeTripCount;
+            
+            System.out.printf("XE %d (zk=1) — %d chuyến\n", k + 1, activeTripCount);
+            System.out.println("┌────────┬────────────┬────────────┬──────────┬──────────────┐");
+            System.out.println("│Chuyến m│Công trường │Xuất phát   │Nhiệt độ  │Chi phí       │");
+            System.out.println("├────────┼────────────┼────────────┼──────────┼──────────────┤");
+            
+            int tripIndex = 0;
             for (int m = 0; m < cfg.Mk; m++) {
                 int site = -1;
                 for (int i = 0; i < cfg.N; i++) {
@@ -40,20 +59,42 @@ public class SolutionPrinter {
                 }
                 
                 if (site != -1) {
-                    activeTripCount++;
+                    tripIndex++;
                     double temp = calc.calcTemperature(site);
+                    if (temp < 120.0) tempViolations++;
+                    
                     double tripCost = 2.0 * cfg.doi[site] * cfg.coi[site];
-                    System.out.printf("  %-10d | Site %-9d | %-12.1f | %-10.2f C | %,.0f VND\n", 
-                                      activeTripCount, site + 1, sol.txp_km[k][m], temp, tripCost);
+                    
+                    // Format departure time starting from 06:30
+                    int startMinutes = 6 * 60 + 30 + (int) Math.round(sol.txp_km[k][m]);
+                    int hh = (startMinutes / 60) % 24;
+                    int mm = startMinutes % 60;
+                    int duration = (int) Math.round((cfg.doi[site] / cfg.v) * 60.0);
+                    
+                    String departStr = String.format("%02d:%02d (%d')", hh, mm, duration);
+                    String siteStr = String.format("Site %d (%.0fkm)", site + 1, cfg.doi[site]);
+                    String tempStr = String.format("%.1f°C %s", temp, temp >= 120.0 ? "✓" : "✗");
+                    String costStr = String.format("%,.0f VNĐ", tripCost);
+                    
+                    System.out.printf("│  %-6d│%-12s│%-12s│%-10s│%-14s│\n", 
+                                      tripIndex, siteStr, departStr, tempStr, costStr);
                 }
             }
-            if (activeTripCount == 0) {
-                System.out.println("  No active trips.");
-            }
-            System.out.println();
+            System.out.println("└────────┴────────────┴────────────┴──────────┴──────────────┘\n");
         }
         
-        System.out.println("Demand Fulfillment Summary:");
+        if (!unmobilizedVehicles.isEmpty()) {
+            StringBuilder sb = new StringBuilder("Xe ");
+            for (int idx = 0; idx < unmobilizedVehicles.size(); idx++) {
+                sb.append(unmobilizedVehicles.get(idx));
+                if (idx < unmobilizedVehicles.size() - 1) sb.append(", ");
+            }
+            sb.append(": KHÔNG HUY ĐỘNG (zk=0)\n");
+            System.out.println(sb.toString());
+        }
+        
+        // Demand check
+        boolean demandFulfilled = true;
         for (int i = 0; i < cfg.N; i++) {
             int required = (int) Math.ceil(cfg.Di[i] / cfg.Q);
             int actual = 0;
@@ -62,11 +103,17 @@ public class SolutionPrinter {
                     actual += sol.xikm[i][k][m];
                 }
             }
-            System.out.printf("  Site %d: Demanded %-5.1f tons (%d trips) | Delivered %-5.1f tons (%d trips) - %s\n", 
-                              i + 1, cfg.Di[i], required, actual * cfg.Q, actual, 
-                              (actual == required) ? "FULFILLED" : "VIOLATED");
+            if (actual < required) demandFulfilled = false;
         }
-        System.out.println("===============================================================");
+        
+        double mobilizedPct = (double) mobilizedCount / cfg.T * 100.0;
+        
+        System.out.println("═══ TỔNG HỢP ═══");
+        System.out.printf("Xe huy động: %d/%d (%.0f%%)\n", mobilizedCount, cfg.T, mobilizedPct);
+        System.out.printf("Tổng chuyến: %d\n", totalTrips);
+        System.out.printf("Vi phạm nhiệt: %d/%d %s\n", tempViolations, totalTrips, tempViolations == 0 ? "✓" : "✗");
+        System.out.printf("Nhu cầu đáp ứng: %s\n", demandFulfilled ? "100% ✓" : "CHƯA ĐÁP ỨNG ✗");
+        System.out.println("═══════════════════════════════════════════════════════════════");
     }
     
     private static int countMobilized(HMASolution sol) {
@@ -77,3 +124,4 @@ public class SolutionPrinter {
         return count;
     }
 }
+
