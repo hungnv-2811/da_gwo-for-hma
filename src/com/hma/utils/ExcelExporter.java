@@ -131,11 +131,8 @@ public class ExcelExporter {
         // Save Excel file
         try (FileOutputStream fos = new FileOutputStream(file)) {
             workbook.write(fos);
-            System.out.println("Exported HMA optimization schedule and convergence history successfully to: " + EXCEL_FILE_PATH);
-        } catch (IOException e) {
-            System.err.println("[CẢNH BÁO] Không thể ghi file Excel '" + EXCEL_FILE_PATH + "': " + e.getMessage());
-            System.err.println("-> Hãy đóng file Excel nếu bạn đang mở nó.");
         }
         workbook.close();
+        System.out.println("Exported HMA optimization schedule and convergence history successfully to: " + EXCEL_FILE_PATH);
     }
 }
