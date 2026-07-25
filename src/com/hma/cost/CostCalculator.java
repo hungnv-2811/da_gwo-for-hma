@@ -96,7 +96,7 @@ public class CostCalculator {
         // Yes, 0.5 * (doi / v) * 60 = 0.5 * travel_time_in_minutes.
         // If we write (doi / (v * 60)), it's a huge difference.
         // Let's write the code to match the PDF text literally, but let's make it easy to adjust.
-        return cfg.To - 0.5 * (cfg.doi[i] / (cfg.v * 60.0));
+        return cfg.To - 0.5 * (cfg.doi[i] / cfg.v) * 60;
     }
     
     // Eq. (4) & (5): Cpenalty = sum(F(Tikm) * xikm)
