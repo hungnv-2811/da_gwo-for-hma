@@ -1,8 +1,7 @@
 # Chuyển đổi DA-GWO → Bộ giải Tối ưu Vận chuyển HMA
-## (Cập nhật chính xác theo tài liệu Hàm mục tiêu NCKH.pdf)
 
-> [!IMPORTANT]
-> Tài liệu này đã được **cập nhật chính xác** theo file [Hàm mục tiêu NCKH.pdf](file:///d:/DA_GWO/Hàm mục tiêu NCKH.pdf). Tất cả công thức, ký hiệu, ràng buộc đều match 100% với tài liệu gốc.
+
+
 
 > [!CAUTION]
 > ### Sự khác biệt quan trọng so với bản phân tích trước
