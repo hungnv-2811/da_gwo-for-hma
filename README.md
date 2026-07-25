@@ -136,7 +136,7 @@ testt.main()
 
 ### Chi tiết từng sửa đổi
 
-#### [DA_GWO.java](file:///d:/DA_GWO/src/com/test/DA_GWO.java) — SỬA NẶNG
+#### [DA_GWO.java](file:///d:/DA_GWO/src/com/test/DA_GWO.java) 
 
 | Hàm | Dòng | Sửa gì | Lý do |
 |---|---|---|---|
@@ -273,7 +273,7 @@ public HMASolution decode(double[] X, HMAConfig cfg) {
 
 ---
 
-## BƯỚC 4: Thay thế Fitness Function (Chính xác theo PDF)
+## BƯỚC 4: Thay thế Fitness Function 
 
 ### 4.1. Hàm mục tiêu — Eq. (1)
 
