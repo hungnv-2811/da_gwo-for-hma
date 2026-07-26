@@ -19,7 +19,7 @@ Trong đó:
    $$C_{operational} = \sum_{k=1}^{T} \sum_{i=1}^{N} \sum_{m=1}^{M_k} 2 \cdot d_{oi} \cdot c_{oi} \cdot x_{ikm}$$
 3. **Chi phí phạt nhiệt độ ($C_{penalty}$):** Phạt tài chính khi nhiệt độ HMA khi đến công trường dưới $120^\circ\text{C}$:
    $$C_{penalty} = \sum_{k=1}^{T} \sum_{i=1}^{N} \sum_{m=1}^{M_k} F(T_{ikm}) \cdot x_{ikm}$$
-   *với $F(T_{ikm}) = 0$ nếu $T_{ikm} \ge 120^\circ\text{C}$, và $F(T_{ikm}) = Q \cdot \alpha$ nếu $T_{ikm} < 120^\circ\text{C}$.*
+   với $$F(T_{ikm}) = 0$$ nếu $$T_{ikm} \ge 120^\circ\text{C}$$, và $$F(T_{ikm}) = Q \cdot \alpha$$ nếu $T_{ikm} < 120^\circ\text{C}.$
 
 ### Mô Hình Suy Giảm Nhiệt Độ Tuyến Tính
 $$T_{ikm} = T_o - 0.5 \times \left(\frac{d_{oi}}{v}\right) \times 60$$
