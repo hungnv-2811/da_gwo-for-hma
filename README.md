@@ -7,7 +7,7 @@
 > ### Sự khác biệt quan trọng so với bản phân tích trước
 > | Điểm | Bản trước (dự đoán) | Tài liệu thực tế |
 > |---|---|---|
-> | **Mô hình nhiệt độ** | Newton's exponential cooling: `T(t) = T_env + (T_init-T_env)·e^(-kt)` | **Tuyến tính**: `T_ikm = To - 0.5 × (doi / (v×60))` |
+> | **Mô hình nhiệt độ** | Newton's exponential cooling: `T(t) = T_env + (T_init-T_env)·e^(-kt)` | **Tuyến tính**: `T_ikm = To - 0.5 × (doi / v)×60 |
 > | **Hàm phạt** | Quadratic penalty: `λ × violation²` | **Step function nhị phân**: `F(T) = 0 nếu T≥120°C, Q×α nếu T<120°C` |
 > | **Đội xe** | Heterogeneous (mỗi xe capacity khác nhau) | **Homogeneous**: tất cả xe cùng tải trọng Q |
 > | **Chi phí vận hành** | `fuel_rate × distance × fuel_price` | `2 × doi × coi × xikm` (đơn giản hơn) |
