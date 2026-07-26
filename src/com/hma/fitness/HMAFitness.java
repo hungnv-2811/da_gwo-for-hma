@@ -18,16 +18,16 @@ public class HMAFitness extends f_xj {
     
     @Override
     public double func(double[] X) throws IOException {
-        // 1. Decode continuous vector X to HMASolution
+        // 1. Giải mã vector liên tục X sang phương án HMASolution
         HMASolution sol = HMASolution.decode(X, cfg);
         
-        // 2. Repair constraints (6), (7), (8), (11)
+        // 2. Sửa chữa các ràng buộc kỹ thuật (6), (7), (8), (11)
         RepairOperator.repairAll(sol, cfg);
         
-        // 3. Calculate objective cost
+        // 3. Tính tổng chi phí mục tiêu TC (Phương trình 1)
         double cost = calculator.calcTotalCost(sol);
         
-        // 4. Add heavy penalties for unresolved constraints if any (as soft constraint handling)
+        // 4. Cộng thêm phạt nặng nếu còn vi phạm ràng buộc chưa sửa được
         double penalty = calcExtraPenalty(sol);
         
         return cost + penalty;
@@ -35,9 +35,9 @@ public class HMAFitness extends f_xj {
     
     private double calcExtraPenalty(HMASolution sol) {
         double penalty = 0.0;
-        double LAMBDA = 10000000.0; // Extreme penalty multiplier
+        double LAMBDA = 10000000.0; // Hệ số phạt cực lớn
         
-        // Check demand balance (6)
+        // Kiểm tra ràng buộc toàn vẹn nhu cầu (6)
         for (int i = 0; i < cfg.N; i++) {
             int required = (int) Math.ceil(cfg.Di[i] / cfg.Q);
             int actual = 0;
@@ -51,7 +51,7 @@ public class HMAFitness extends f_xj {
             }
         }
         
-        // Check sequence constraints (8)
+        // Kiểm tra ràng buộc thời gian tuần tự (8)
         for (int k = 0; k < cfg.T; k++) {
             if (sol.zk[k] == 0) continue;
             for (int m = 0; m < cfg.Mk - 1; m++) {
@@ -67,7 +67,6 @@ public class HMAFitness extends f_xj {
                     double duration = (2.0 * cfg.doi[siteM] / cfg.v) * 60.0 + cfg.dtdo;
                     double returnTime = sol.txp_km[k][m] + duration;
                     
-                    // Check next active trip
                     boolean nextActive = false;
                     for (int i = 0; i < cfg.N; i++) {
                         if (sol.xikm[i][k][m + 1] == 1) {

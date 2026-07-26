@@ -3,11 +3,11 @@ package com.hma.model;
 import com.hma.config.HMAConfig;
 
 public class HMASolution {
-    public int[] zk;              // [T] - vehicle k mobilized
-    public int[][][] xikm;        // [N][T][Mk] - trip m of vehicle k to site i
-    public double[][] txp_km;     // [T][Mk] - departure time from plant (minutes)
+    public int[] zk;              // Biến nhị phân [T]: 1 nếu xe k được huy động
+    public int[][][] xikm;        // Biến nhị phân [N][T][Mk]: 1 nếu chuyến m của xe k đến công trường i
+    public double[][] txp_km;     // Biến liên tục [T][Mk]: mốc thời điểm rời trạm trộn (phút)
 
-    // Cost details
+    // Chi tiết chi phí
     public double Cfixed;
     public double Coperational;
     public double Cpenalty;
@@ -19,16 +19,16 @@ public class HMASolution {
         this.txp_km = new double[cfg.T][cfg.Mk];
     }
     
-    // Decode continuous vector X to HMASolution
+    // Giải mã vector liên tục X sang đối tượng phương án HMASolution
     public static HMASolution decode(double[] X, HMAConfig cfg) {
         HMASolution sol = new HMASolution(cfg);
         
-        // 1. Decode zk (vehicle activation)
+        // 1. Giải mã zk (kích hoạt xe)
         for (int k = 0; k < cfg.T; k++) {
             sol.zk[k] = (X[k] >= 0.5) ? 1 : 0;
         }
         
-        // 2. Decode xikm (assignment of trips to sites)
+        // 2. Giải mã xikm (phân công chuyến xe đến công trường)
         int xOffset = cfg.T;
         for (int k = 0; k < cfg.T; k++) {
             if (sol.zk[k] == 0) continue;
@@ -36,26 +36,26 @@ public class HMASolution {
                 double maxVal = -1.0;
                 int bestSite = -1;
                 for (int i = 0; i < cfg.N; i++) {
-                    // index for xikm in continuous vector X
+                    // Chỉ số cho xikm trong vector liên tục X
                     int idx = xOffset + i * cfg.T * cfg.Mk + k * cfg.Mk + m;
                     if (X[idx] > maxVal) {
                         maxVal = X[idx];
                         bestSite = i;
                     }
                 }
-                // threshold for trip activation
+                // Ngưỡng kích hoạt chuyến đi
                 if (maxVal >= 0.3) {
                     sol.xikm[bestSite][k][m] = 1;
                 }
             }
         }
         
-        // 3. Decode txp_km (departure times)
+        // 3. Giải mã txp_km (thời điểm rời trạm trộn)
         int tOffset = cfg.T + cfg.N * cfg.T * cfg.Mk;
         for (int k = 0; k < cfg.T; k++) {
             for (int m = 0; m < cfg.Mk; m++) {
                 int idx = tOffset + k * cfg.Mk + m;
-                // mapping [0, 1] to [0, T_ca]
+                // Ánh xạ [0, 1] sang miền giá trị [0, T_ca] (phút)
                 sol.txp_km[k][m] = X[idx] * cfg.T_ca;
             }
         }
@@ -63,16 +63,16 @@ public class HMASolution {
         return sol;
     }
     
-    // Encode HMASolution back to double[] continuous representation
+    // Mã hóa ngược HMASolution thành vector biểu diễn liên tục double[]
     public double[] encode(HMAConfig cfg) {
         double[] X = new double[cfg.dim];
         
-        // Encode zk
+        // Mã hóa zk
         for (int k = 0; k < cfg.T; k++) {
             X[k] = (zk[k] == 1) ? 0.8 : 0.2;
         }
         
-        // Encode xikm
+        // Mã hóa xikm
         int xOffset = cfg.T;
         for (int k = 0; k < cfg.T; k++) {
             for (int m = 0; m < cfg.Mk; m++) {
@@ -94,7 +94,7 @@ public class HMASolution {
             }
         }
         
-        // Encode txp_km
+        // Mã hóa txp_km
         int tOffset = cfg.T + cfg.N * cfg.T * cfg.Mk;
         for (int k = 0; k < cfg.T; k++) {
             for (int m = 0; m < cfg.Mk; m++) {

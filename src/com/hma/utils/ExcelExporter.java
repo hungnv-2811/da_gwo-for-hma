@@ -25,7 +25,7 @@ public class ExcelExporter {
             workbook = new XSSFWorkbook();
         }
         
-        // Reset or create sheet
+        // Tạo mới hoặc làm sạch Sheet lịch trình
         String sheetName = "LichTrinhHMA";
         Sheet sheet = workbook.getSheet(sheetName);
         if (sheet != null) {
@@ -37,7 +37,7 @@ public class ExcelExporter {
         CostCalculator calc = new CostCalculator(cfg);
         calc.calcTotalCost(sol);
         
-        // Style Setup
+        // Thiết lập định dạng tiêu đề
         Font headerFont = workbook.createFont();
         headerFont.setBold(true);
         headerFont.setColor(IndexedColors.WHITE.getIndex());
@@ -48,28 +48,28 @@ public class ExcelExporter {
         headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         headerStyle.setAlignment(HorizontalAlignment.CENTER);
         
-        // General Information
+        // Thông tin chung
         int rowIdx = 0;
         Row r = sheet.createRow(rowIdx++);
         Cell titleCell = r.createCell(0);
-        titleCell.setCellValue("HMA TRANSPORTATION OPTIMIZATION PLAN");
+        titleCell.setCellValue("PHƯƠNG ÁN VẬN CHUYỂN HMA TỐI ƯU");
         
-        sheet.createRow(rowIdx++).createCell(0).setCellValue("Total Cost (TC): " + String.format("%,.0f", sol.TC) + " VND");
-        sheet.createRow(rowIdx++).createCell(0).setCellValue("  - Fixed Cost: " + String.format("%,.0f", sol.Cfixed) + " VND");
-        sheet.createRow(rowIdx++).createCell(0).setCellValue("  - Operational Cost: " + String.format("%,.0f", sol.Coperational) + " VND");
-        sheet.createRow(rowIdx++).createCell(0).setCellValue("  - Temperature Penalty: " + String.format("%,.0f", sol.Cpenalty) + " VND");
-        rowIdx++; // Empty space
+        sheet.createRow(rowIdx++).createCell(0).setCellValue("Tổng chi phí (TC): " + String.format("%,.0f", sol.TC) + " VNĐ");
+        sheet.createRow(rowIdx++).createCell(0).setCellValue("  - Chi phí cố định (Cfixed): " + String.format("%,.0f", sol.Cfixed) + " VNĐ");
+        sheet.createRow(rowIdx++).createCell(0).setCellValue("  - Chi phí vận hành (Coperational): " + String.format("%,.0f", sol.Coperational) + " VNĐ");
+        sheet.createRow(rowIdx++).createCell(0).setCellValue("  - Chi phí phạt nhiệt độ (Cpenalty): " + String.format("%,.0f", sol.Cpenalty) + " VNĐ");
+        rowIdx++; // Dòng trống
         
-        // Table Headers
+        // Tiêu đề bảng
         Row headerRow = sheet.createRow(rowIdx++);
-        String[] columns = {"Vehicle ID", "Trip #", "Destination Site", "Distance One-Way (km)", "Departure Time (Min)", "Arrival Temperature (C)", "Trip Cost (VND)"};
+        String[] columns = {"Mã phương tiện", "Chuyến số", "Công trường đích", "Khoảng cách 1 chiều (km)", "Thời điểm xuất phát (Phút)", "Nhiệt độ khi đến (°C)", "Chi phí chuyến (VNĐ)"};
         for (int i = 0; i < columns.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(columns[i]);
             cell.setCellStyle(headerStyle);
         }
         
-        // Trip records writing
+        // Ghi dữ liệu các chuyến xe
         for (int k = 0; k < cfg.T; k++) {
             if (sol.zk[k] == 0) continue;
             int tripNum = 1;
@@ -83,9 +83,9 @@ public class ExcelExporter {
                 }
                 if (site != -1) {
                     Row dataRow = sheet.createRow(rowIdx++);
-                    dataRow.createCell(0).setCellValue("Vehicle " + (k + 1));
-                    dataRow.createCell(1).setCellValue("Trip " + tripNum++);
-                    dataRow.createCell(2).setCellValue("Site " + (site + 1));
+                    dataRow.createCell(0).setCellValue("Xe " + (k + 1));
+                    dataRow.createCell(1).setCellValue("Chuyến " + tripNum++);
+                    dataRow.createCell(2).setCellValue("Công trường " + (site + 1));
                     dataRow.createCell(3).setCellValue(cfg.doi[site]);
                     dataRow.createCell(4).setCellValue(sol.txp_km[k][m]);
                     dataRow.createCell(5).setCellValue(calc.calcTemperature(site));
@@ -94,12 +94,12 @@ public class ExcelExporter {
             }
         }
         
-        // Autofit columns
+        // Tự động căn chỉnh độ rộng cột
         for (int i = 0; i < columns.length; i++) {
             sheet.autoSizeColumn(i);
         }
         
-        // Create or Reset "HoiTu" sheet for convergence curve analysis
+        // Tạo mới hoặc làm sạch Sheet "HoiTu" cho phân tích đường cong hội tụ
         if (convergenceHistory != null) {
             String convSheetName = "HoiTu";
             Sheet convSheet = workbook.getSheet(convSheetName);
@@ -111,11 +111,11 @@ public class ExcelExporter {
             
             Row convHeader = convSheet.createRow(0);
             Cell cellIter = convHeader.createCell(0);
-            cellIter.setCellValue("Iteration");
+            cellIter.setCellValue("Vòng lặp (Iteration)");
             cellIter.setCellStyle(headerStyle);
             
             Cell cellCost = convHeader.createCell(1);
-            cellCost.setCellValue("Best Cost (TC)");
+            cellCost.setCellValue("Chi phí tốt nhất (TC)");
             cellCost.setCellStyle(headerStyle);
             
             int convRowIdx = 1;
@@ -128,11 +128,11 @@ public class ExcelExporter {
             convSheet.autoSizeColumn(1);
         }
         
-        // Save Excel file
+        // Lưu file Excel
         try (FileOutputStream fos = new FileOutputStream(file)) {
             workbook.write(fos);
         }
         workbook.close();
-        System.out.println("Exported HMA optimization schedule and convergence history successfully to: " + EXCEL_FILE_PATH);
+        System.out.println("Đã xuất lịch trình tối ưu HMA và lịch sử hội tụ ra file: " + EXCEL_FILE_PATH);
     }
 }

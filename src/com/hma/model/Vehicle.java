@@ -1,9 +1,9 @@
 package com.hma.model;
 
 public class Vehicle {
-    public int k; // 0-indexed vehicle identifier
-    public int zk; // 1 if mobilized, 0 otherwise
-    public int Mk; // max trips
+    public int k; // Chỉ số phương tiện (từ 0 đến T-1)
+    public int zk; // Biến nhị phân: 1 nếu xe được huy động, 0 nếu ngược lại
+    public int Mk; // Số chuyến tối đa trong ca làm việc
     
     public Vehicle(int k, int zk, int Mk) {
         this.k = k;

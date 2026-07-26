@@ -2,10 +2,7 @@ package com.test;
 
 import org.apache.commons.math3.special.Gamma;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Scanner;
 
 public class DA {
     double [] lb;
@@ -26,8 +23,6 @@ public class DA {
     double Best_score;
     double [] Best_pos;
     f_xj fobj;
-    double randomm [];
-    int position;
     public DA(f_xj fobj, double [] lb, double [] ub, int Max_iteration, int SearchAgents_no) {
         this.fobj = fobj;
         dim = ub.length;
@@ -46,9 +41,6 @@ public class DA {
         DeltaX = new double[SearchAgents_no][dim];
         Best_score = 0;
         Best_pos = new double[dim];
-        randomm = new double[10000000];
-        position = 0;
-//        readFile();
     }
 
     void init(){
@@ -141,8 +133,8 @@ public class DA {
                     }
                 }
 
-                //Alignment%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                //Eq. (3.2)
+                // Căn chỉnh (Alignment) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                // Phương trình (3.2)
 
                 double [] A = new double[dim];
 
@@ -158,8 +150,8 @@ public class DA {
                     A = DeltaX[i];
                 }
 
-                //Cohesion%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                //Eq. (3.3)
+                // Tụ hội (Cohesion) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                // Phương trình (3.3)
                 double C_temp[] = new double[dim];
                 double [] C = new double[dim];
                 if (neighbours_no > 1){
@@ -179,8 +171,8 @@ public class DA {
                     C[j]=C_temp[j]-X[i][j];
                 }
 
-                //Attraction to food%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                //Eq. (3.4)
+                // Hướng về thức ăn (Attraction to food) %%%%%%%%%%%%%%%%%
+                // Phương trình (3.4)
                 double [] F = new double[dim];
                 double [] Dist2Food = distance(X[i], Food_pos);
                 if (lte(Dist2Food,r)){
@@ -189,8 +181,8 @@ public class DA {
                     }
                 }
 
-                //Distraction from enemy%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                //Eq. (3.5)
+                // Tránh xa kẻ thù (Distraction from enemy) %%%%%%%%%%%%%%%
+                // Phương trình (3.5)
                 double [] Enemy = new double[dim];
                 double [] Dist2Enemy = distance(X[i], Enemy_pos);
                 if (lte(Dist2Enemy,r)){
@@ -223,7 +215,7 @@ public class DA {
                             X[i][j] = X[i][j] + DeltaX[i][j];
                         }
                     } else {
-                        //Eq. (3.8)
+                        // Chuyến bay Lévy (Lévy flight) khi không có hàng xóm - Phương trình (3.8)
                         double [] levy = Levy(dim);
                         for (int j=0; j<dim; j++){
                             X[i][j] = X[i][j] +  levy[j]*X[i][j];
@@ -343,34 +335,7 @@ public class DA {
         return d;
     }
 
-    void readFile(){
-        String url = "C:\\Users\\HOANG\\Desktop\\GWO\\source_version_9.0_Final_MOGWO_Multiple_RMCS\\source\\Data\\testfile.txt";
-        FileInputStream fileInputStream = null;
-        try {
-            fileInputStream = new FileInputStream(url);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        Scanner scanner = new Scanner(fileInputStream);
-
-        try {
-            for (int i=0; i<1000000; i++) {
-                randomm[i] = Double.parseDouble(scanner.nextLine());
-            }
-        } finally {
-            try {
-                scanner.close();
-                fileInputStream.close();
-            } catch (IOException ex) {
-
-            }
-        }
-    }
-
     double nextRand(){
-//        return 0.7;
-//        position++;
-//        return randomm[position-1];
         return Math.random();
     }
 }

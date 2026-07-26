@@ -2,13 +2,10 @@ package com.test;
 
 import org.apache.commons.math3.special.Gamma;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Scanner;
 
 public class DA_GWO {
     double [] lb;
@@ -32,8 +29,6 @@ public class DA_GWO {
     double [] Best_pos;
     public double [] convergenceHistory;
     f_xj fobj;
-    double randomm [];
-    int position;
 
     double r1;
     double r2;
@@ -81,11 +76,6 @@ public class DA_GWO {
         Enemy_fitness = -inf;       //gia tri ham muc tieu tai vi tri ke thu
         Enemy_pos = new double[dim];//vi tri cua ke thu
         DeltaX = new double[SearchAgents_no][dim];  // buoc nhay delta X
-
-        //random - only for test
-        randomm = new double[10000000];
-        position = 0;
-//        readFile();
     }
 
     void init() throws IOException {
@@ -205,11 +195,11 @@ public class DA_GWO {
             double my_c = 0.1- (double) iter*((0.1-0)/((double) Max_iteration/2));
             if (my_c<0) my_c = 0;
 
-            double s= 2*nextRand()*my_c; // Seperation weight
-            double alignment= 2*nextRand()*my_c; // Alignment weight
-            double c= 2*nextRand()*my_c; // Cohesion weight
-            double f= 2*nextRand();      // Food attraction weight
-            double e=my_c;               // Enemy distraction weight
+            double s= 2*nextRand()*my_c; // Trọng số Phân tách (Separation)
+            double alignment= 2*nextRand()*my_c; // Trọng số Căn chỉnh (Alignment)
+            double c= 2*nextRand()*my_c; // Trọng số Tụ hội (Cohesion)
+            double f= 2*nextRand();      // Trọng số Thu hút thức ăn (Food)
+            double e=my_c;               // Trọng số Xua đuổi kẻ thù (Enemy)
 
 //            for (int i=0; i<N_DA; i++){  //Calculate all the objective values first
 //                Fitness[i] = fobj.func(X_DA[i]);
@@ -235,7 +225,7 @@ public class DA_GWO {
                 int neighbours_no=0;
                 double [][] Neighbours_DeltaX = new double[N_DA][dim];
                 double [][] Neighbours_X = new double[N_DA][dim];
-                //find the neighbouring solutions
+                // Tìm các phương án lân cận trong bán kính r
                 for (int j=0; j<N_DA; j++){
                     double [] Dist2Enemy = distance(X_DA[i], X_DA[j]);
                     double zero[] = new double[dim];
@@ -249,8 +239,8 @@ public class DA_GWO {
                     }
                 }
 
-                //Seperation%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                //Eq. (3.1)
+                // Phân tách (Separation) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                // Phương trình (3.1)
                 double S[] = new double[dim];
                 if (neighbours_no>1) {
                     for (int k=0; k<neighbours_no; k++){
@@ -263,8 +253,8 @@ public class DA_GWO {
                     }
                 }
 
-                //Alignment%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                //Eq. (3.2)
+                // Căn chỉnh (Alignment) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                // Phương trình (3.2)
 
                 double [] A = new double[dim];
 
@@ -280,8 +270,8 @@ public class DA_GWO {
                     A = DeltaX[i];
                 }
 
-                //Cohesion%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                //Eq. (3.3)
+                // Tụ hội (Cohesion) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                // Phương trình (3.3)
                 double C_temp[] = new double[dim];
                 double [] C = new double[dim];
                 if (neighbours_no > 1){
@@ -301,8 +291,8 @@ public class DA_GWO {
                     C[j]=C_temp[j]-X_DA[i][j];
                 }
 
-                //Attraction to food%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                //Eq. (3.4)
+                // Hướng về thức ăn (Attraction to food) %%%%%%%%%%%%%%%%%
+                // Phương trình (3.4)
                 double [] F = new double[dim];
                 double [] Dist2Food = distance(X_DA[i], Food_pos);
                 if (lte(Dist2Food,r)){
@@ -311,8 +301,8 @@ public class DA_GWO {
                     }
                 }
 
-                //Distraction from enemy%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                //Eq. (3.5)
+                // Tránh xa kẻ thù (Distraction from enemy) %%%%%%%%%%%%%%%
+                // Phương trình (3.5)
                 double [] Enemy = new double[dim];
                 double [] Dist2Enemy = distance(X_DA[i], Enemy_pos);
                 if (lte(Dist2Enemy,r)){
@@ -345,7 +335,7 @@ public class DA_GWO {
                             X_DA[i][j] = X_DA[i][j] + DeltaX[i][j];
                         }
                     } else {
-                        //Eq. (3.8)
+                        // Chuyến bay Lévy (Lévy flight) khi không có hàng xóm - Phương trình (3.8)
                         double [] levy = Levy(dim);
                         for (int j=0; j<dim; j++){
                             X_DA[i][j] = X_DA[i][j] +  levy[j]*X_DA[i][j];
@@ -556,34 +546,7 @@ public class DA_GWO {
         return s;
     }
 
-    void readFile(){
-        String url = "C:\\Users\\HOANG\\Desktop\\GWO\\source_version_9.0_Final_MOGWO_Multiple_RMCS\\source\\Data\\testfile.txt";
-        FileInputStream fileInputStream = null;
-        try {
-            fileInputStream = new FileInputStream(url);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        Scanner scanner = new Scanner(fileInputStream);
-
-        try {
-            for (int i=0; i<1000000; i++) {
-                randomm[i] = Double.parseDouble(scanner.nextLine());
-            }
-        } finally {
-            try {
-                scanner.close();
-                fileInputStream.close();
-            } catch (IOException ex) {
-
-            }
-        }
-    }
-
     double nextRand(){
-//        return 0.7;
-//        position++;
-//        return randomm[position-1];
         return Math.random();
     }
 }

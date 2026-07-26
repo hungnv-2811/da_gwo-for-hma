@@ -1,33 +1,33 @@
 package com.hma.config;
 
 public class HMAConfig {
-    // Problem scale
-    public int N;               // Number of construction sites
-    public int T;               // Number of vehicles
-    public int Mk;              // Maximum trips per vehicle per shift
+    // Quy mô bài toán
+    public int N;               // Số lượng công trường xây dựng
+    public int T;               // Tổng số lượng xe vận chuyển trong đội xe
+    public int Mk;              // Số chuyến tối đa của mỗi xe trong một ca
     
-    // Cost parameters
-    public double f;            // Fixed cost per mobilized vehicle (VND/vehicle)
-    public double[] coi;        // Operating cost rate per km (VND/km) for each site i
-    public double alpha;        // Financial penalty rate for HMA temperature drop below 120 C (VND/ton)
+    // Tham số chi phí
+    public double f;            // Đơn giá chi phí cố định khi huy động một xe (VNĐ/xe)
+    public double[] coi;        // Đơn giá chi phí vận hành trên 1 km đối với công trường i (VNĐ/km)
+    public double alpha;        // Hệ số phạt tài chính khi nhiệt độ HMA dưới 120°C (VNĐ/tấn)
     
-    // Distance & Demand
-    public double[] doi;        // One-way distance from plant to construction site i (km)
-    public double[] Di;         // HMA demand at construction site i (ton)
+    // Khoảng cách & Nhu cầu
+    public double[] doi;        // Khoảng cách 1 chiều từ trạm trộn đến công trường i (km)
+    public double[] Di;         // Nhu cầu bê tông nhựa nóng HMA tại công trường i (tấn)
     
-    // Vehicle specs
-    public double Q;            // Vehicle rated capacity (tons)
-    public double v;            // Average design speed of vehicle (km/h)
+    // Thông số xe
+    public double Q;            // Tải trọng định mức chuyên chở của một xe (tấn)
+    public double v;            // Vận tốc di chuyển trung bình thiết kế (km/h)
     
-    // Time parameters
-    public double dtdo;         // Stopping/waiting and unloading time at the site (minutes)
-    public double T_ca;         // Total shift time limit (minutes)
+    // Tham số thời gian
+    public double dtdo;         // Thời gian dừng chờ và đổ vật liệu tại công trường (phút)
+    public double T_ca;         // Tổng thời gian giới hạn của ca làm việc (phút)
     
-    // Temperature parameters
-    public double To;           // Standard temperature of HMA when leaving plant (C)
+    // Tham số nhiệt độ
+    public double To;           // Nhiệt độ tiêu chuẩn của HMA khi bắt đầu rời trạm trộn (°C)
     
-    // Encoding dimension
-    public int dim;             // Total dimension for continuous encoding: T + N*T*Mk + T*Mk
+    // Số chiều mã hóa
+    public int dim;             // Tổng số chiều cho vector mã hóa liên tục: T + N*T*Mk + T*Mk
     
     public HMAConfig(int N, int T, int Mk, double f, double[] coi, double alpha, 
                      double[] doi, double[] Di, double Q, double v, double dtdo, 

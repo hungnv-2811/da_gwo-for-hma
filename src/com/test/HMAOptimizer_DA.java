@@ -5,54 +5,55 @@ import com.hma.config.SampleData;
 import com.hma.fitness.HMAFitness;
 import com.hma.model.HMASolution;
 import com.hma.utils.SolutionPrinter;
+import com.hma.utils.ExcelExporter;
 import com.hma.constraint.RepairOperator;
 import com.hma.cost.CostCalculator;
 import org.apache.commons.math3.special.Gamma;
 
 /**
- * HMAOptimizer_DA - HMA Transportation Optimization using Dragonfly Algorithm (DA)
+ * HMAOptimizer_DA - Tối ưu hóa vận chuyển HMA bằng Thuật toán Chuồn chuồn (DA)
  *
- * DA (Dragonfly Algorithm) simulates the static and dynamic swarming behaviors of dragonflies.
- * Each dragonfly updates its step vector (ΔX) based on 5 swarm behaviors:
+ * DA (Dragonfly Algorithm) mô phỏng các hành vi bầy đàn tĩnh và động của loài chuồn chuồn.
+ * Mỗi con chuồn chuồn cập nhật vector bước di chuyển (ΔX) dựa trên 5 hành vi bầy đàn:
  *
- *   1. Separation (S)   - Avoid collision with neighbors            [Eq. 3.1]
- *   2. Alignment  (A)   - Match velocity with neighbors             [Eq. 3.2]
- *   3. Cohesion   (C)   - Move toward the center of the swarm      [Eq. 3.3]
- *   4. Food       (F)   - Attraction to best solution (food)        [Eq. 3.4]
- *   5. Enemy      (E)   - Repulsion from worst solution (enemy)     [Eq. 3.5]
+ *   1. Phân tách (Separation - S)  - Tránh va chạm với các con hàng xóm         [Eq. 3.1]
+ *   2. Căn chỉnh (Alignment - A)   - Đồng bộ vận tốc với các con hàng xóm       [Eq. 3.2]
+ *   3. Tụ hội  (Cohesion - C)     - Di chuyển về tâm của bầy đàn               [Eq. 3.3]
+ *   4. Thức ăn  (Food - F)         - Thu hút về phía phương án tốt nhất (mồi)   [Eq. 3.4]
+ *   5. Kẻ thù   (Enemy - E)        - Xua đuổi khỏi phương án tệ nhất (kẻ thù)   [Eq. 3.5]
  *
- * When no neighbors exist, Lévy flight is used for random walk:     [Eq. 3.8]
+ * Khi không có hàng xóm xung quanh, chuyến bay Lévy (Lévy flight) được sử dụng:  [Eq. 3.8]
  *   ΔX_new = w*ΔX + rand*A + rand*C + rand*S
  *   X_new  = X + ΔX
  *
- * Neighborhood radius r expands progressively from 25% to 75% of search space.
- * Inertia weight w decreases from 0.9 to 0.4 (encourages exploitation late on).
+ * Bán kính lân cận r mở rộng dần từ 25% đến 75% không gian tìm kiếm.
+ * Trọng số quán tính w giảm dần từ 0.9 xuống 0.4 (tăng cường khai thác ở giai đoạn sau).
  */
 public class HMAOptimizer_DA {
 
     public static void main(String[] args) throws Exception {
         // ---------------------------------------------------------------
-        // 1. PROBLEM SETUP
+        // 1. CẤU HÌNH BÀI TOÁN
         // ---------------------------------------------------------------
         HMAConfig cfg = SampleData.getSampleConfig();
 
         System.out.println("===============================================================");
-        System.out.println("   HMA TRANSPORTATION OPTIMIZATION WITH DA (DRAGONFLY ALG.)   ");
+        System.out.println("   TỐI ƯU HÓA VẬN CHUYỂN HMA BẰNG THUẬT TOÁN CHUỒN CHUỒN (DA)  ");
         System.out.println("===============================================================");
-        System.out.println("Problem Scale:");
-        System.out.println("  - Construction Sites (N) = " + cfg.N);
-        System.out.println("  - Vehicles (T)           = " + cfg.T);
-        System.out.println("  - Max Trips per Vehicle  = " + cfg.Mk);
-        System.out.println("  - Search Space Dimension = " + cfg.dim);
+        System.out.println("Quy mô bài toán:");
+        System.out.println("  - Số công trường (N)     = " + cfg.N);
+        System.out.println("  - Số xe khả dụng (T)     = " + cfg.T);
+        System.out.println("  - Số chuyến tối đa / xe  = " + cfg.Mk);
+        System.out.println("  - Số chiều không gian    = " + cfg.dim);
         System.out.println("---------------------------------------------------------------");
-        System.out.println("Algorithm: DA - Dragonfly Algorithm");
-        System.out.println("  Strategy: 5 swarm behaviors + Levy flight for lone dragonflies");
-        System.out.println("  Food Source  : Best solution found so far (minimization target)");
-        System.out.println("  Enemy Source : Worst solution within bounds (to flee from)");
-        System.out.println("  Neighborhood : Radius expands from 25% to 75% of search space");
+        System.out.println("Thuật toán: DA - Dragonfly Algorithm");
+        System.out.println("  Chiến lược: 5 hành vi bầy đàn + Chuyến bay Lévy khi cô lập");
+        System.out.println("  Nguồn thức ăn: Phương án tốt nhất hiện tại (mục tiêu tối thiểu hóa)");
+        System.out.println("  Kẻ thù: Phương án tệ nhất trong biên (tránh xa)");
+        System.out.println("  Bán kính lân cận: Mở rộng từ 25% đến 75% không gian tìm kiếm");
         System.out.println("---------------------------------------------------------------");
 
-        // Define bounds [0.0, 1.0] for continuous mapping of discrete decisions
+        // Định nghĩa biên [0.0, 1.0] cho vector mã hóa liên tục
         double[] lb = new double[cfg.dim];
         double[] ub = new double[cfg.dim];
         for (int i = 0; i < cfg.dim; i++) {
@@ -60,27 +61,26 @@ public class HMAOptimizer_DA {
             ub[i] = 1.0;
         }
 
-        // Initialize objective function (HMA fitness)
+        // Khởi tạo hàm mục tiêu HMA
         f_xj fobj = new HMAFitness(cfg);
 
         // ---------------------------------------------------------------
-        // 2. ALGORITHM PARAMETERS
+        // 2. THAM SỐ THUẬT TOÁN
         // ---------------------------------------------------------------
-        int maxIter  = 300;  // Maximum iterations
-        int popSize  = 40;   // Population size (number of dragonflies)
+        int maxIter  = 300;  // Số vòng lặp tối đa
+        int popSize  = 40;   // Kích thước quần thể (số lượng chuồn chuồn)
 
-        System.out.println("Parameters:");
-        System.out.println("  - Population Size  = " + popSize + " dragonflies");
-        System.out.println("  - Max Iterations   = " + maxIter);
-        System.out.println("  - Inertia w        : 0.9 -> 0.4 (linearly decreasing)");
-        System.out.println("  - my_c             : 0.1 -> 0   (behavior weight control)");
+        System.out.println("Tham số:");
+        System.out.println("  - Kích thước quần thể = " + popSize + " chuồn chuồn");
+        System.out.println("  - Số vòng lặp tối đa  = " + maxIter);
+        System.out.println("  - Trọng số quán tính  : 0.9 -> 0.4 (giảm tuyến tính)");
+        System.out.println("  - my_c                : 0.1 -> 0   (điều khiển trọng số hành vi)");
         System.out.println("===============================================================");
 
         // ---------------------------------------------------------------
-        // 3. RUN DA
+        // 3. CHẠY THUẬT TOÁN DA
         // ---------------------------------------------------------------
-        System.out.println("\nRunning DA optimization...");
-        System.out.println("(Each dot = 50 iterations completed)");
+        System.out.println("\nĐang chạy tối ưu hóa DA...");
 
         long startTime = System.currentTimeMillis();
 
@@ -90,78 +90,77 @@ public class HMAOptimizer_DA {
         long endTime = System.currentTimeMillis();
 
         // ---------------------------------------------------------------
-        // 4. CONVERGENCE REPORT
+        // 4. BÁO CÁO HỘI TỤ
         // ---------------------------------------------------------------
-        System.out.println("\n\nOptimization completed in " + ((endTime - startTime) / 1000.0) + " seconds.");
-        System.out.println("\nConvergence Milestones (Best Cost per Iteration):");
-        System.out.printf("  - Iteration   1 : %,.0f VND%n", solver.convergenceHistory[1]);
-        System.out.printf("  - Iteration  50 : %,.0f VND%n", solver.convergenceHistory[50]);
-        System.out.printf("  - Iteration 100 : %,.0f VND%n", solver.convergenceHistory[100]);
-        System.out.printf("  - Iteration 150 : %,.0f VND%n", solver.convergenceHistory[150]);
-        System.out.printf("  - Iteration 200 : %,.0f VND%n", solver.convergenceHistory[200]);
-        System.out.printf("  - Iteration 250 : %,.0f VND%n", solver.convergenceHistory[250]);
-        System.out.printf("  - Iteration 300 : %,.0f VND%n", solver.convergenceHistory[300]);
+        System.out.println("\n\nHoàn thành tối ưu hóa trong " + ((endTime - startTime) / 1000.0) + " giây.");
+        System.out.println("\nMốc hội tụ (Chi phí tốt nhất theo từng vòng lặp):");
+        System.out.printf("  - Vòng lặp   1 : %,.0f VNĐ%n", solver.convergenceHistory[1]);
+        System.out.printf("  - Vòng lặp  50 : %,.0f VNĐ%n", solver.convergenceHistory[50]);
+        System.out.printf("  - Vòng lặp 100 : %,.0f VNĐ%n", solver.convergenceHistory[100]);
+        System.out.printf("  - Vòng lặp 150 : %,.0f VNĐ%n", solver.convergenceHistory[150]);
+        System.out.printf("  - Vòng lặp 200 : %,.0f VNĐ%n", solver.convergenceHistory[200]);
+        System.out.printf("  - Vòng lặp 250 : %,.0f VNĐ%n", solver.convergenceHistory[250]);
+        System.out.printf("  - Vòng lặp 300 : %,.0f VNĐ%n", solver.convergenceHistory[300]);
 
-        // Improvement percentage
+        // Mức độ cải thiện
         double initCost   = solver.convergenceHistory[1];
         double finalCost  = solver.convergenceHistory[maxIter];
         double improvement = (initCost > 0) ? (initCost - finalCost) / initCost * 100.0 : 0;
-        System.out.printf("%nImprovement from Iter 1 to %d: %.2f%%%n", maxIter, improvement);
+        System.out.printf("%nMức độ cải thiện từ Vòng 1 đến %d: %.2f%%%n", maxIter, improvement);
 
         // ---------------------------------------------------------------
-        // 5. DECODE AND PRINT SOLUTION
+        // 5. GIẢI MÃ VÀ IN PHƯƠNG ÁN
         // ---------------------------------------------------------------
         double[] bestPos = solver.Best_pos;
         HMASolution sol  = HMASolution.decode(bestPos, cfg);
         RepairOperator.repairAll(sol, cfg);
 
-        // Print full solution schedule
+        // In phương án chi tiết
         SolutionPrinter.printSolution(sol, cfg);
 
         // ---------------------------------------------------------------
-        // 6. COST BREAKDOWN
+        // 6. PHÂN TÍCH CHI PHÍ
         // ---------------------------------------------------------------
         CostCalculator calc = new CostCalculator(cfg);
         calc.calcTotalCost(sol);
-        System.out.println("\nCost Breakdown (DA Result):");
-        System.out.printf("  Total Cost (TC)      : %,.0f VND%n", sol.TC);
-        System.out.printf("  Fixed Cost           : %,.0f VND%n", sol.Cfixed);
-        System.out.printf("  Operational Cost     : %,.0f VND%n", sol.Coperational);
-        System.out.printf("  Temperature Penalty  : %,.0f VND%n", sol.Cpenalty);
+        System.out.println("\nPhân tích chi phí (Kết quả DA):");
+        System.out.printf("  Tổng chi phí (TC)     : %,.0f VNĐ%n", sol.TC);
+        System.out.printf("  Chi phí cố định       : %,.0f VNĐ%n", sol.Cfixed);
+        System.out.printf("  Chi phí vận hành      : %,.0f VNĐ%n", sol.Coperational);
+        System.out.printf("  Phạt chất lượng nhiệt  : %,.0f VNĐ%n", sol.Cpenalty);
 
         // ---------------------------------------------------------------
-        // 7. EXPORT TO EXCEL
+        // 7. XUẤT FILE EXCEL
         // ---------------------------------------------------------------
-        com.hma.utils.ExcelExporter.exportSolutionToExcel(sol, cfg, solver.convergenceHistory);
+        ExcelExporter.exportSolutionToExcel(sol, cfg, solver.convergenceHistory);
 
         System.out.println("===============================================================");
-        System.out.println("                    DA OPTIMIZATION DONE                      ");
+        System.out.println("                HOÀN THÀNH TỐI ƯU HÓA DA                       ");
         System.out.println("===============================================================");
     }
 }
 
 // -----------------------------------------------------------------------
-// Inner helper: DA_HMA — full DA implementation with convergence tracking
-// for HMA-specific optimization (mirrors DA.java but with public history)
+// Lớp hỗ trợ: DA_HMA — Thực thi thuật toán DA đầy đủ với lịch sử hội tụ
 // -----------------------------------------------------------------------
 class DA_HMA {
-    // DA state fields
+    // Các trường trạng thái của DA
     double[]   lb, ub;
-    double[]   r;              // Neighborhood radius per dimension
-    double[]   Delta_max;      // Max allowed step size
-    double     Food_fitness;   // Best fitness found (food source)
-    double[]   Food_pos;       // Position of food source
-    double     Enemy_fitness;  // Worst fitness found (enemy)
-    double[]   Enemy_pos;      // Position of enemy
-    double[][] X;              // Dragonfly positions
-    double[]   Fitness;        // Fitness values
-    double[][] DeltaX;         // Step vectors (velocity equivalent)
+    double[]   r;              // Bán kính lân cận từng chiều
+    double[]   Delta_max;      // Bước nhảy tối đa cho phép
+    double     Food_fitness;   // Giá trị mục tiêu tốt nhất (nguồn thức ăn)
+    double[]   Food_pos;       // Vị trí nguồn thức ăn
+    double     Enemy_fitness;  // Giá trị mục tiêu tệ nhất (kẻ thù)
+    double[]   Enemy_pos;      // Vị trí kẻ thù
+    double[][] X;              // Vị trí các con chuồn chuồn
+    double[]   Fitness;        // Giá trị hàm mục tiêu
+    double[][] DeltaX;         // Vector bước di chuyển (vận tốc)
     int        dim;
     int        SearchAgents_no;
     int        Max_iteration;
     double     inf = 10E+50;
 
-    // Result fields (public for external access)
+    // Các trường kết quả
     public double   Best_score;
     public double[] Best_pos;
     public double[] convergenceHistory;
@@ -191,13 +190,13 @@ class DA_HMA {
         Best_score         = Double.MAX_VALUE;
     }
 
-    // Initialization
+    // Khởi tạo ban đầu
     void init() {
         // Delta_max = (ub - lb) / 10
         for (int i = 0; i < dim; i++) {
             Delta_max[i] = (ub[i] - lb[i]) / 10.0;
         }
-        // Random initial positions
+        // Khởi tạo vị trí ngẫu nhiên ban đầu
         for (int i = 0; i < SearchAgents_no; i++) {
             for (int j = 0; j < dim; j++) {
                 X[i][j]      = lb[j] + (ub[j] - lb[j]) * Math.random();
@@ -206,41 +205,41 @@ class DA_HMA {
         }
     }
 
-    // Main DA optimization loop
+    // Vòng lặp chính của thuật toán DA
     public void solution() throws Exception {
         init();
 
         for (int iter = 1; iter <= Max_iteration; iter++) {
 
-            // Update neighborhood radius r (expands from 25% to 75% of range)
+            // Cập nhật bán kính lân cận r (mở rộng từ 25% đến 75% không gian)
             for (int i = 0; i < dim; i++) {
                 r[i] = (ub[i] - lb[i]) / 4.0 + ((ub[i] - lb[i]) * ((double) iter / Max_iteration) * 2.0);
             }
 
-            // Inertia weight w: 0.9 -> 0.4
+            // Trọng số quán tính w: 0.9 -> 0.4
             double w     = 0.9 - (double) iter * ((0.9 - 0.4) / Max_iteration);
-            // Behavior weight control my_c: 0.1 -> 0 (first half), then stays 0
+            // Điều khiển trọng số hành vi my_c: 0.1 -> 0 (ở nửa đầu ca), sau đó giữ 0
             double my_c  = 0.1 - (double) iter * ((0.1 - 0.0) / ((double) Max_iteration / 2.0));
             if (my_c < 0) my_c = 0;
 
-            // Randomized weights for each behavior
-            double s         = 2 * Math.random() * my_c;  // Separation weight
-            double alignment = 2 * Math.random() * my_c;  // Alignment weight
-            double c         = 2 * Math.random() * my_c;  // Cohesion weight
-            double f         = 2 * Math.random();          // Food attraction weight
-            double e         = my_c;                       // Enemy distraction weight
+            // Trọng số ngẫu nhiên cho từng hành vi
+            double s         = 2 * Math.random() * my_c;  // Trọng số Phân tách (Separation)
+            double alignment = 2 * Math.random() * my_c;  // Trọng số Căn chỉnh (Alignment)
+            double c         = 2 * Math.random() * my_c;  // Trọng số Tụ hội (Cohesion)
+            double f         = 2 * Math.random();          // Trọng số Thu hút thức ăn (Food)
+            double e         = my_c;                       // Trọng số Xua đuổi kẻ thù (Enemy)
 
-            // ---- Evaluate all dragonflies; update food and enemy ----
+            // ---- Đánh giá tất cả chuồn chuồn; cập nhật thức ăn và kẻ thù ----
             for (int i = 0; i < SearchAgents_no; i++) {
                 Fitness[i] = fobj.func(X[i]);
 
-                // Update food source (best solution)
+                // Cập nhật nguồn thức ăn (phương án tốt nhất)
                 if (Fitness[i] < Food_fitness) {
                     Food_fitness = Fitness[i];
                     System.arraycopy(X[i], 0, Food_pos, 0, dim);
                 }
 
-                // Update enemy source (worst solution within bounds)
+                // Cập nhật kẻ thù (phương án tệ nhất trong biên)
                 if (Fitness[i] > Enemy_fitness) {
                     if (lt(X[i], ub) && gt(X[i], lb)) {
                         Enemy_fitness = Fitness[i];
@@ -249,14 +248,14 @@ class DA_HMA {
                 }
             }
 
-            // ---- Update each dragonfly's step and position ----
+            // ---- Cập nhật bước di chuyển và vị trí từng con chuồn chuồn ----
             for (int i = 0; i < SearchAgents_no; i++) {
                 int neighbours_no = 0;
                 double[][] Neighbours_DeltaX = new double[SearchAgents_no][dim];
                 double[][] Neighbours_X      = new double[SearchAgents_no][dim];
                 int index = -1;
 
-                // Find neighbors within radius r
+                // Tìm các phương án lân cận trong bán kính r
                 double[] zero = new double[dim];
                 for (int j = 0; j < SearchAgents_no; j++) {
                     double[] dist = distance(X[i], X[j]);
@@ -268,7 +267,7 @@ class DA_HMA {
                     }
                 }
 
-                // -- Separation (Eq. 3.1): avoid crowding --
+                // -- Phân tách (Eq. 3.1): tránh va chạm dồn cục --
                 double[] S = new double[dim];
                 if (neighbours_no > 1) {
                     for (int k = 0; k < neighbours_no; k++) {
@@ -279,7 +278,7 @@ class DA_HMA {
                     for (int j = 0; j < dim; j++) S[j] = -S[j];
                 }
 
-                // -- Alignment (Eq. 3.2): match neighbor velocities --
+                // -- Căn chỉnh (Eq. 3.2): đồng bộ vận tốc với hàng xóm --
                 double[] A = new double[dim];
                 if (neighbours_no > 1) {
                     for (int j = 0; j < dim; j++) {
@@ -291,7 +290,7 @@ class DA_HMA {
                     A = DeltaX[i].clone();
                 }
 
-                // -- Cohesion (Eq. 3.3): move toward neighbor center --
+                // -- Tụ hội (Eq. 3.3): di chuyển về tâm hàng xóm --
                 double[] C_temp = new double[dim];
                 double[] C      = new double[dim];
                 if (neighbours_no > 1) {
@@ -305,31 +304,31 @@ class DA_HMA {
                 }
                 for (int j = 0; j < dim; j++) C[j] = C_temp[j] - X[i][j];
 
-                // -- Food Attraction (Eq. 3.4): move toward food --
+                // -- Hướng về thức ăn (Eq. 3.4): di chuyển về mồi --
                 double[] F           = new double[dim];
                 double[] Dist2Food   = distance(X[i], Food_pos);
                 if (lte(Dist2Food, r)) {
                     for (int j = 0; j < dim; j++) F[j] = Food_pos[j] - X[i][j];
                 }
 
-                // -- Enemy Distraction (Eq. 3.5): flee from enemy --
+                // -- Tránh xa kẻ thù (Eq. 3.5): tránh xa kẻ thù --
                 double[] Enemy       = new double[dim];
                 double[] Dist2Enemy  = distance(X[i], Enemy_pos);
                 if (lte(Dist2Enemy, r)) {
                     for (int j = 0; j < dim; j++) Enemy[j] = Enemy_pos[j] + X[i][j];
                 }
 
-                // Boundary wrap-around
+                // Xử lý vượt biên không gian
                 for (int j = 0; j < dim; j++) {
                     if (X[i][j] > ub[j]) { X[i][j] = lb[j]; DeltaX[i][j] = Math.random(); }
                     if (X[i][j] < lb[j]) { X[i][j] = ub[j]; DeltaX[i][j] = Math.random(); }
                 }
 
-                // -- Update step ΔX and position X --
+                // -- Cập nhật bước nhảy DeltaX và vị trí X --
                 if (any_gt(Dist2Food, r)) {
-                    // Not near food: either swarm update or Lévy flight
+                    // Không ở gần thức ăn: cập nhật theo bầy hoặc bay Lévy
                     if (neighbours_no > 1) {
-                        // Swarm behavior update
+                        // Cập nhật hành vi bầy đàn
                         for (int j = 0; j < dim; j++) {
                             DeltaX[i][j] = w * DeltaX[i][j]
                                          + Math.random() * A[j]
@@ -339,7 +338,7 @@ class DA_HMA {
                             X[i][j]      = X[i][j] + DeltaX[i][j];
                         }
                     } else {
-                        // Lévy flight (Eq. 3.8) — explore when isolated
+                        // Chuyến bay Lévy (Eq. 3.8) — khám phá khi bị cô lập
                         double[] levy = Levy(dim);
                         for (int j = 0; j < dim; j++) {
                             X[i][j]      = X[i][j] + levy[j] * X[i][j];
@@ -347,7 +346,7 @@ class DA_HMA {
                         }
                     }
                 } else {
-                    // Near food: full behavior-weighted update
+                    // Gần thức ăn: cập nhật đầy đủ trọng số các hành vi
                     for (int j = 0; j < dim; j++) {
                         DeltaX[i][j] = alignment * A[j] + c * C[j] + s * S[j]
                                      + f * F[j] + e * Enemy[j]
@@ -357,23 +356,20 @@ class DA_HMA {
                     }
                 }
 
-                // Clamp to bounds
+                // Đưa vị trí về nằm trong khoảng biên [lb, ub]
                 for (int j = 0; j < dim; j++) {
                     X[i][j] = Math.max(lb[j], Math.min(ub[j], X[i][j]));
                 }
             }
 
-            // Record the best (food) as this iteration's result
+            // Ghi nhận nghiệm tốt nhất (thức ăn) cho vòng lặp này
             Best_score               = Food_fitness;
             Best_pos                 = Food_pos.clone();
             convergenceHistory[iter] = Best_score;
-
-            // Progress indicator
-            if (iter % 50 == 0) System.out.print(".");
         }
     }
 
-    // ---- Lévy Flight random step (Eq. 3.10) ----
+    // ---- Bước ngẫu nhiên chuyến bay Lévy (Eq. 3.10) ----
     double[] Levy(int d) {
         double beta  = 3.0 / 2.0;
         double sigma = Math.pow(
@@ -390,7 +386,7 @@ class DA_HMA {
         return step;
     }
 
-    // ---- Utility comparison helpers ----
+    // ---- Các hàm hỗ trợ so sánh toán học ----
     boolean gt(double[] x, double[] y) {
         for (int i = 0; i < x.length; i++) if (x[i] <= y[i]) return false;
         return true;

@@ -6,19 +6,19 @@ import java.util.*;
 
 public class RepairOperator {
     
+    // Thực hiện sửa chữa tất cả các ràng buộc kỹ thuật của phương án
     public static void repairAll(HMASolution sol, HMAConfig cfg) {
-        // 1. Ensure trip limit (7) is satisfied (each trip goes to at most 1 site)
+        // 1. Đảm bảo ràng buộc giới hạn chuyến đi (7) - mỗi chuyến đi tối đa 1 công trường
         repairTripLimit(sol, cfg);
         
-        // 2. Adjust demands (6) - add/remove trips to match exactly Ceil(Di/Q)
+        // 2. Sửa chữa nhu cầu (6) - thêm/bớt chuyến để bằng chính xác Ceil(Di/Q)
         repairDemand(sol, cfg);
         
-        // 3. Ensure sequence times (8) and non-negativity (11)
+        // 3. Đảm bảo ràng buộc thời gian tuần tự (8) và điều kiện không âm (11)
         repairSequenceAndDepartureTimes(sol, cfg);
     }
     
-    // Eq. (7): sum_i xikm <= 1. 
-    // Ensure that for each vehicle k and trip m, at most one site has xikm = 1
+    // Phương trình (7): sum_i xikm <= 1. Đảm bảo mỗi chuyến m của xe k đi tối đa 1 công trường
     public static void repairTripLimit(HMASolution sol, HMAConfig cfg) {
         for (int k = 0; k < cfg.T; k++) {
             for (int m = 0; m < cfg.Mk; m++) {
@@ -31,7 +31,7 @@ public class RepairOperator {
                     }
                 }
                 if (activeCount > 1) {
-                    // Reset all and keep only the first one (or we could select randomly)
+                    // Giữ lại công trường đầu tiên/tốt nhất, hủy các công trường còn lại
                     for (int i = 0; i < cfg.N; i++) {
                         if (i != bestSite) {
                             sol.xikm[i][k][m] = 0;
@@ -42,12 +42,12 @@ public class RepairOperator {
         }
     }
     
-    // Eq. (6): sum_k sum_m xikm = Ceil(Di / Q)
+    // Phương trình (6): sum_k sum_m xikm = Ceil(Di / Q). Đảm bảo đáp ứng chính xác nhu cầu
     public static void repairDemand(HMASolution sol, HMAConfig cfg) {
         for (int i = 0; i < cfg.N; i++) {
             int requiredTrips = (int) Math.ceil(cfg.Di[i] / cfg.Q);
             
-            // Count current actual trips going to site i
+            // Đếm số chuyến thực tế đang giao đến công trường i
             int actualTrips = 0;
             for (int k = 0; k < cfg.T; k++) {
                 for (int m = 0; m < cfg.Mk; m++) {
@@ -57,7 +57,7 @@ public class RepairOperator {
                 }
             }
             
-            // Case 1: Too many trips -> reduce
+            // Trường hợp 1: Thừa chuyến -> giảm bớt chuyến
             if (actualTrips > requiredTrips) {
                 int surplus = actualTrips - requiredTrips;
                 outerLoop:
@@ -71,15 +71,14 @@ public class RepairOperator {
                     }
                 }
             }
-            // Case 2: Too few trips -> add
+            // Trường hợp 2: Thiếu chuyến -> bổ sung chuyến
             else if (actualTrips < requiredTrips) {
                 int deficit = requiredTrips - actualTrips;
                 
-                // First try to assign to active vehicles with empty slots
+                // Thử gán chuyến cho các xe đang hoạt động còn slot trống
                 for (int k = 0; k < cfg.T; k++) {
                     if (sol.zk[k] == 1) {
                         for (int m = 0; m < cfg.Mk; m++) {
-                            // Check if trip m of vehicle k is completely idle
                             boolean isIdle = true;
                             for (int j = 0; j < cfg.N; j++) {
                                 if (sol.xikm[j][k][m] == 1) {
@@ -96,10 +95,10 @@ public class RepairOperator {
                     }
                 }
                 
-                // If still deficit, mobilize inactive vehicles and assign trips
+                // Nếu vẫn thiếu, huy động thêm xe mới chưa sử dụng
                 for (int k = 0; k < cfg.T; k++) {
                     if (sol.zk[k] == 0) {
-                        sol.zk[k] = 1; // Mobilize
+                        sol.zk[k] = 1; // Huy động xe
                         for (int m = 0; m < cfg.Mk; m++) {
                             sol.xikm[i][k][m] = 1;
                             deficit--;
@@ -110,7 +109,7 @@ public class RepairOperator {
             }
         }
         
-        // Disable vehicles that have no trips at all
+        // Tắt các xe không chạy chuyến nào
         for (int k = 0; k < cfg.T; k++) {
             boolean hasTrip = false;
             for (int i = 0; i < cfg.N; i++) {
@@ -128,14 +127,13 @@ public class RepairOperator {
         }
     }
     
-    // Eq. (8): txp_{km+1} >= txp_{km} + sum_i (2 * doi / v * 60 + dtdo) * xikm
-    // Also ensures txp_km >= 0
+    // Phương trình (8): txp_{km+1} >= txp_{km} + sum_i (2 * doi / v * 60 + dtdo) * xikm
+    // Đảm bảo tính tuần tự thời gian chuyến xe và điều kiện không âm (11)
     public static void repairSequenceAndDepartureTimes(HMASolution sol, HMAConfig cfg) {
         for (int k = 0; k < cfg.T; k++) {
             if (sol.zk[k] == 0) continue;
             
-            // 1. Sort active trips chronologically for vehicle k based on their initial departure times
-            // Create a list of active trip indices
+            // 1. Sắp xếp các chuyến xe đang hoạt động theo thứ tự thời gian xuất phát ban đầu
             List<Integer> activeTripIndices = new ArrayList<>();
             for (int m = 0; m < cfg.Mk; m++) {
                 boolean isActive = false;
@@ -150,7 +148,6 @@ public class RepairOperator {
                 }
             }
             
-            // Sort indices based on txp_km value
             final double[] times = sol.txp_km[k];
             activeTripIndices.sort(new Comparator<Integer>() {
                 @Override
@@ -159,17 +156,16 @@ public class RepairOperator {
                 }
             });
             
-            // 2. Adjust times and enforce sequence constraints
+            // 2. Điều chỉnh thời gian xuất phát đảm bảo tính tuần tự
             double currentTime = 0.0;
             for (int idx = 0; idx < activeTripIndices.size(); idx++) {
                 int m = activeTripIndices.get(idx);
                 
-                // Enforce txp_km >= 0
+                // Đảm bảo txp_km >= 0
                 if (sol.txp_km[k][m] < currentTime) {
                     sol.txp_km[k][m] = currentTime;
                 }
                 
-                // Calculate return time for this trip
                 int site = -1;
                 for (int i = 0; i < cfg.N; i++) {
                     if (sol.xikm[i][k][m] == 1) {
@@ -179,11 +175,11 @@ public class RepairOperator {
                 }
                 
                 if (site != -1) {
-                    // Trip time = 2 * doi / v (hours) * 60 (min) + dtdo (min)
+                    // Thời gian thực hiện chuyến khứ hồi = (2 * doi / v) * 60 + dtdo
                     double tripDuration = (2.0 * cfg.doi[site] / cfg.v) * 60.0 + cfg.dtdo;
                     currentTime = sol.txp_km[k][m] + tripDuration;
                     
-                    // If return time exceeds the shift time, we must deactivate this and subsequent trips
+                    // Nếu thời gian quay về vượt quá ca làm việc T_ca, hủy chuyến này và các chuyến sau
                     if (currentTime > cfg.T_ca) {
                         for (int remIdx = idx; remIdx < activeTripIndices.size(); remIdx++) {
                             int remM = activeTripIndices.get(remIdx);

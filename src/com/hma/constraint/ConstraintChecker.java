@@ -10,7 +10,7 @@ public class ConstraintChecker {
         this.cfg = cfg;
     }
     
-    // Eq. (6): sum_k sum_m xikm = Ceil(Di / Q)
+    // Phương trình (6): Ràng buộc toàn vẹn nhu cầu khối lượng từng công trường: sum_k sum_m xikm = Ceil(Di / Q)
     public boolean checkDemand(HMASolution sol) {
         for (int i = 0; i < cfg.N; i++) {
             int required = (int) Math.ceil(cfg.Di[i] / cfg.Q);
@@ -27,7 +27,7 @@ public class ConstraintChecker {
         return true;
     }
     
-    // Eq. (7): sum_i xikm <= 1
+    // Phương trình (7): Ràng buộc giới hạn chuyến đi: sum_i xikm <= 1
     public boolean checkTripLimit(HMASolution sol) {
         for (int k = 0; k < cfg.T; k++) {
             for (int m = 0; m < cfg.Mk; m++) {
@@ -43,7 +43,7 @@ public class ConstraintChecker {
         return true;
     }
     
-    // Eq. (8): txp_{km+1} >= txp_{km} + sum_i (2 * doi / v * 60 + dtdo) * xikm
+    // Phương trình (8): Ràng buộc thời gian tuần tự giữa các chuyến xe: txp_{km+1} >= txp_{km} + sum_i (2 * doi / v * 60 + dtdo) * xikm
     public boolean checkSequence(HMASolution sol) {
         for (int k = 0; k < cfg.T; k++) {
             if (sol.zk[k] == 0) continue;
@@ -56,12 +56,12 @@ public class ConstraintChecker {
                     }
                 }
                 
-                // If trip m is active, trip m+1 must start after trip m returns
+                // Nếu chuyến m đang hoạt động, chuyến m+1 phải xuất phát sau khi chuyến m hoàn thành quay về
                 if (siteM != -1) {
                     double duration = (2.0 * cfg.doi[siteM] / cfg.v) * 60.0 + cfg.dtdo;
                     double returnTime = sol.txp_km[k][m] + duration;
                     
-                    // Check if next trip starts before current returns (only if next trip is also active)
+                    // Kiểm tra chuyến tiếp theo có xuất phát trước khi chuyến hiện tại quay về hay không
                     boolean nextActive = false;
                     for (int i = 0; i < cfg.N; i++) {
                         if (sol.xikm[i][k][m + 1] == 1) {
@@ -78,7 +78,7 @@ public class ConstraintChecker {
         return true;
     }
     
-    // Check if any active trip returns after T_ca
+    // Kiểm tra xe có quay về sau khi kết thúc ca làm việc (T_ca) hay không
     public boolean checkShiftLimit(HMASolution sol) {
         for (int k = 0; k < cfg.T; k++) {
             if (sol.zk[k] == 0) continue;
@@ -102,6 +102,7 @@ public class ConstraintChecker {
         return true;
     }
     
+    // Kiểm tra tất cả các ràng buộc hợp lệ
     public boolean isFullyValid(HMASolution sol) {
         return checkDemand(sol) && checkTripLimit(sol) && checkSequence(sol) && checkShiftLimit(sol);
     }

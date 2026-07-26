@@ -1,11 +1,11 @@
 package com.hma.model;
 
 public class ConstructionSite {
-    public int i; // 0-indexed site identifier
-    public double Di; // Demand (tons)
-    public double doi; // One-way distance (km)
-    public double coi; // Operating cost per km (VND)
-    public int requiredTrips; // Ceil(Di/Q)
+    public int i; // Chỉ số công trường (từ 0 đến N-1)
+    public double Di; // Nhu cầu khối lượng bê tông nhựa nóng (tấn)
+    public double doi; // Quãng đường di chuyển 1 chiều từ trạm trộn (km)
+    public double coi; // Đơn giá chi phí vận hành phương tiện trên 1 km (VNĐ/km)
+    public int requiredTrips; // Số chuyến xe cần thiết = Ceil(Di / Q)
     
     public ConstructionSite(int i, double Di, double doi, double coi, double Q) {
         this.i = i;
