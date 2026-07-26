@@ -2,8 +2,6 @@
 
 Bộ giải tối ưu hóa metaheuristic phục vụ bài toán **"Tối ưu hóa vận chuyển bê tông nhựa nóng (HMA) trong thi công công trình đường giao thông"** áp dụng thuật toán lai **DA-GWO (Dragonfly Algorithm + Grey Wolf Optimizer)** kết hợp với bộ sửa lỗi ràng buộc vật lý (Repair Operator).
 
-> 📌 **Tài liệu phân tích chi tiết toán học & thiết kế thuật toán:** Xem tại [IMPLEMENTATION_PLAN.md](file:///d:/DA_GWO/IMPLEMENTATION_PLAN.md)
-
 ---
 
 ## 1. Tổng Quan Bài Toán & Mô Hình Toán Học
@@ -77,7 +75,7 @@ d:\DA_GWO\
 ## 3. Hướng Dẫn Biên Dịch Và Chạy Chương Trình
 
 ### 3.1. Biên dịch toàn bộ dự án
-Mở Terminal / Powershell tại thư mục gốc `d:\DA_GWO` và thực thi:
+Mở Terminal / Powershell tại thư mục gốc và thực thi:
 
 ```powershell
 javac -cp "lib/*" -d out src/com/hma/config/*.java src/com/hma/model/*.java src/com/hma/cost/*.java src/com/hma/constraint/*.java src/com/hma/fitness/*.java src/com/hma/utils/*.java src/com/test/*.java
