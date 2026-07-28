@@ -28,6 +28,7 @@ public class DA_GWO {
     double Best_score;
     double [] Best_pos;
     public double [] convergenceHistory;
+    double gwoRatio; // Ty le ca the GWO trong quan the (0.0 - 1.0)
     f_xj fobj;
 
     double r1;
@@ -47,7 +48,16 @@ public class DA_GWO {
     double X3;
 
 
+    /** Constructor mac dinh: gwoRatio = 0.2 (20% GWO, 80% DA) */
     public DA_GWO(f_xj fobj, double [] lb, double [] ub, int Max_iteration, int SearchAgents_no) {
+        this(fobj, lb, ub, Max_iteration, SearchAgents_no, 0.2);
+    }
+
+    /**
+     * Constructor mo rong: cho phep dieu chinh ty le GWO dong.
+     * @param gwoRatio ty le ca the GWO trong quan the (vi du: 0.2 = 20% GWO, 80% DA)
+     */
+    public DA_GWO(f_xj fobj, double [] lb, double [] ub, int Max_iteration, int SearchAgents_no, double gwoRatio) {
         //khoi tao chung
         this.fobj = fobj;   //ham muc tieu
         dim = ub.length;    //so chieu khong gian (so luong bien)
@@ -55,6 +65,7 @@ public class DA_GWO {
         this.Max_iteration = Max_iteration;     //so vong lap toi da
         this.ub = ub;                           //bien tren
         this.lb = lb;                           //bien duoi
+        this.gwoRatio = Math.max(0.05, Math.min(0.95, gwoRatio)); // kep vao [0.05, 0.95]
         X = new double[SearchAgents_no][dim];   //vi tri cua ca the
         X_GWO = new double[SearchAgents_no][dim];   //vi tri cua ca the soi xam
         X_DA = new double[SearchAgents_no][dim];    //vi tri cua ca the chuon chuon
@@ -116,18 +127,25 @@ public class DA_GWO {
     void solution() throws IOException {
         init();
 
+        // ============================================================
+        // TY LE LAI DONG (Dynamic Ratio): dieu chinh bang tham so gwoRatio
+        // gwoRatio=0.2 => 20% GWO - 80% DA (mac dinh)
+        // gwoRatio=0.3 => 30% GWO - 70% DA
+        // gwoRatio=0.5 => 50% GWO - 50% DA
+        // ============================================================
+        final int N_GWO = (int) Math.max(1, Math.round(SearchAgents_no * gwoRatio));
+        final int N_DA  = SearchAgents_no - N_GWO;
+
         for (int iter=1; iter<=Max_iteration; iter++){
-            //tach quan the thanh GWO va DA
-            int N_GWO = SearchAgents_no/2;
-            int N_DA = SearchAgents_no-SearchAgents_no/2;
-            for (int i=0; i<SearchAgents_no/2; i++){
+            //tach quan the thanh GWO va DA (N_GWO ca the dau, N_DA ca the sau)
+            for (int i=0; i<N_GWO; i++){
                 for (int j=0; j<dim; j++){
                     X_GWO[i][j] = X[i][j];
                 }
             }
-            for (int i=SearchAgents_no/2; i<SearchAgents_no; i++){
+            for (int i=N_GWO; i<SearchAgents_no; i++){
                 for (int j=0; j<dim; j++){
-                    X_DA[i-SearchAgents_no/2][j] = X[i][j];
+                    X_DA[i-N_GWO][j] = X[i][j];
                 }
             }
 
@@ -367,14 +385,14 @@ public class DA_GWO {
             }
 
             //tong hop 2 quan the GWO va DA
-            for (int i=0; i<SearchAgents_no/2; i++){
+            for (int i=0; i<N_GWO; i++){
                 for (int j=0; j<dim; j++){
                     X[i][j]=X_GWO[i][j];
                 }
             }
-            for (int i=SearchAgents_no/2; i<SearchAgents_no; i++){
+            for (int i=N_GWO; i<SearchAgents_no; i++){
                 for (int j=0; j<dim; j++){
-                    X[i][j]=X_DA[i-SearchAgents_no/2][j];
+                    X[i][j]=X_DA[i-N_GWO][j];
                 }
             }
 

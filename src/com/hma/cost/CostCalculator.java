@@ -33,12 +33,26 @@ public class CostCalculator {
         return cOper;
     }
     
-    // Phương trình (9): Tikm = To - 0.5 * (doi / (v * 60)) - Mô hình suy giảm nhiệt độ HMA tuyến tính
-    public double calcTemperature(int i) {
-        return cfg.To - 0.5 * (cfg.doi[i] / cfg.v) * 60;
+    /**
+     * Phương trình (9): Tikm = To - beta * (doi[i] / v) * 60 - gamma * txp_km
+     * Nhiệt độ HMA giảm theo cả quãng đường (khoảng cách) và thời gian chờ tại trạm trộn.
+     *   beta  = 0.5 (°C/phút trên đường)
+     *   gamma = 0.01 (°C/phút chờ tại trạm) — làm cho kết quả phụ thuộc vào txp_km
+     */
+    public double calcTemperature(int i, double txpKm) {
+        double travelTime = (cfg.doi[i] / cfg.v) * 60.0; // phút di chuyển 1 chiều
+        double Tikm = cfg.To
+                - 0.5 * travelTime       // suy giảm do quãng đường
+                - 0.01 * txpKm;          // suy giảm nhẹ do chờ tại trạm trộn
+        return Tikm;
     }
-    
-    // Phương trình (4) & (5): Cpenalty = sum(F(Tikm) * xikm) - Chi phí phạt chất lượng nhiệt độ HMA
+
+    /** Backward-compat: không có txp, giả sử xuất phát từ t=0 */
+    public double calcTemperature(int i) {
+        return calcTemperature(i, 0.0);
+    }
+
+    // Phương trình (4) & (5): Cpenalty = sum(F(Tikm) * xikm) — Chi phí phạt chất lượng nhiệt độ HMA
     public double calcPenaltyCost(HMASolution sol) {
         double cPenalty = 0.0;
         for (int k = 0; k < cfg.T; k++) {
@@ -46,7 +60,8 @@ public class CostCalculator {
             for (int i = 0; i < cfg.N; i++) {
                 for (int m = 0; m < cfg.Mk; m++) {
                     if (sol.xikm[i][k][m] == 1) {
-                        double Tikm = calcTemperature(i);
+                        double txpKm = sol.txp_km[k][m]; // thời điểm rời trạm trộn (phút)
+                        double Tikm = calcTemperature(i, txpKm);
                         if (Tikm < 120.0) {
                             cPenalty += cfg.Q * cfg.alpha;
                         }

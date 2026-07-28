@@ -22,6 +22,7 @@ public class DA {
     double inf = 10E+50;
     double Best_score;
     double [] Best_pos;
+    public double[] convergenceHistory; // Lịch sử giá trị tốt nhất theo iteration
     f_xj fobj;
     public DA(f_xj fobj, double [] lb, double [] ub, int Max_iteration, int SearchAgents_no) {
         this.fobj = fobj;
@@ -41,6 +42,7 @@ public class DA {
         DeltaX = new double[SearchAgents_no][dim];
         Best_score = 0;
         Best_pos = new double[dim];
+        convergenceHistory = new double[Max_iteration + 1]; // index 1..Max_iteration
     }
 
     void init(){
@@ -247,6 +249,7 @@ public class DA {
             }
             Best_score=Food_fitness;
             Best_pos=Food_pos;
+            convergenceHistory[iter] = Best_score; // Lưu lịch sử hội tụ
 //            System.out.println("Iter: "+iter);
 //            System.out.println("Best_score: "+Best_score);
         }

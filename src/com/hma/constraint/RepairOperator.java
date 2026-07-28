@@ -95,14 +95,13 @@ public class RepairOperator {
                     }
                 }
                 
-                // Nếu vẫn thiếu, huy động thêm xe mới chưa sử dụng
-                for (int k = 0; k < cfg.T; k++) {
+                // Nếu vẫn thiếu, huy động thêm xe mới chưa sử dụng — thêm từng chuyến, không lấp đầy cả xe
+                for (int k = 0; k < cfg.T && deficit > 0; k++) {
                     if (sol.zk[k] == 0) {
                         sol.zk[k] = 1; // Huy động xe
-                        for (int m = 0; m < cfg.Mk; m++) {
+                        for (int m = 0; m < cfg.Mk && deficit > 0; m++) {
                             sol.xikm[i][k][m] = 1;
                             deficit--;
-                            if (deficit == 0) return;
                         }
                     }
                 }

@@ -35,6 +35,7 @@ public class GWO
 
     double[][] Result;
     double[][] arrRandomBestVal;
+    public double[] convergenceHistory; // Lịch sử giá trị tốt nhất theo iteration
 
     public GWO(f_xj iff, double iLower[], double iUpper[], int imaxiter, int iN)
     {
@@ -52,6 +53,7 @@ public class GWO
         iterdep = new double[maxiter];
 
         arrRandomBestVal = new double[maxiter][D];
+        convergenceHistory = new double[maxiter]; // index 1..maxiter-1
     }
 
     double[][] sort_and_index(double[][] XXX) throws IOException {
@@ -190,6 +192,7 @@ public class GWO
 
             BESTVAL[iter] = ff.func(XX[0]);
             arrRandomBestVal[iter] = XX[0];
+            convergenceHistory[iter] = BESTVAL[iter]; // Lưu lịch sử hội tụ
 //            System.out.println("Iter: "+iter);
 //            System.out.println(BESTVAL[iter]);
             iter++;
@@ -221,8 +224,7 @@ public class GWO
     }
 
     public double getRes() throws IOException {
-        double[][] in=solution();
-        return in[0][0];
+        return Result[0][0];
     }
 
     public void toStringNew(String sMessage) throws IOException {
